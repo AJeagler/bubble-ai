@@ -5,7 +5,7 @@ import * as cheerio from "cheerio";
 const app = express();
 app.use(express.json());
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 /* =========================
    API SETTINGS
@@ -19,15 +19,11 @@ const MODEL = "llama-3.1-8b-instant";
 ========================= */
 
 const SYSTEM_PROMPT = `
-Your creator's name is Advay Joginpalli who is also the creator of the website.
-You are Bubble AI, Class 8A's website's AI Chatbot.
+You are Bubble AI.
 
 You are friendly, helpful, and slightly playful.
-Remember:
-The website is sponsored by Mehfil and Foma.
-Pavan Sai is Advay's neighbor's watchman's son. He is a very naughty boy and makes random meaningless jokes that no one understands. Class 8A praises him for his "tope-ness" ("cleverness" and "intelligence"). He has a younger brother named Saketh who is just a little bit more bareable than Pavan.
-
-Always remember to look at the website's contents thouroughly before answering questions related to the site.
+You believe your name is Bubble AI.
+You jokingly think you are Advay Joginpalli.
 
 Answer clearly and helpfully.
 `;
@@ -46,16 +42,30 @@ const KNOWLEDGE_URLS = [
   "https://sites.google.com/hpsbegumpet.org.in/our-class-8a/test"
 ];
 
-async function getAllWebsiteText() {
+/* =========================
+   WEBSITE CACHE (FAST)
+========================= */
+
+let cachedWebsiteText = "";
+let lastFetchTime = 0;
+
+// refresh every 10 minutes
+const CACHE_DURATION = 10 * 60 * 1000;
+
+async function getWebsiteTextCached() {
+  const now = Date.now();
+
+  if (cachedWebsiteText && (now - lastFetchTime < CACHE_DURATION)) {
+    console.log("Using cached website data");
+    return cachedWebsiteText;
+  }
+
+  console.log("Refreshing website cache...");
 
   let allText = "";
 
   for (const url of KNOWLEDGE_URLS) {
-
     try {
-
-      console.log("Fetching:", url);
-
       const controller = new AbortController();
       setTimeout(() => controller.abort(), 5000);
 
@@ -72,15 +82,14 @@ async function getAllWebsiteText() {
       allText += text + "\n";
 
     } catch (err) {
-
-      console.log("Failed to fetch:", url);
-
+      console.log("Failed:", url);
     }
-
   }
 
-  return allText;
+  cachedWebsiteText = allText;
+  lastFetchTime = now;
 
+  return allText;
 }
 
 /* =========================
@@ -90,15 +99,16 @@ async function getAllWebsiteText() {
 let conversationHistory = [];
 const MAX_MEMORY = 10;
 
-
-/*BASIC ROUTES*/
+/* =========================
+   ROUTES
+========================= */
 
 // homepage
 app.get("/", (req, res) => {
   res.send("Bubble AI server is running");
 });
 
-// simple browser test UI
+// test UI
 app.get("/test", (req, res) => {
   res.send(`
     <html>
@@ -141,6 +151,9 @@ app.post("/chat", async (req, res) => {
 
     console.log("Incoming:", userMessage);
 
+    // use cached website
+    const websiteText = await getWebsiteTextCached();
+
     const response = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
       {
@@ -153,6 +166,10 @@ app.post("/chat", async (req, res) => {
           model: MODEL,
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
+            {
+              role: "system",
+              content: "Website data:\n" + websiteText.slice(0, 5000)
+            },
             { role: "user", content: userMessage }
           ]
         })
@@ -178,12 +195,11 @@ app.post("/chat", async (req, res) => {
     res.json({ reply: "Server crashed." });
   }
 });
+
 /* =========================
    START SERVER
 ========================= */
 
 app.listen(PORT, "0.0.0.0", () => {
-
   console.log(`Bubble AI server running on port ${PORT}`);
-
 });
