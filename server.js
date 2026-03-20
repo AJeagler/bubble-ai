@@ -132,8 +132,7 @@ app.get("/test", (req, res) => {
 ========================= */
 
 app.post("/chat", async (req, res) => {
-  return res.json({ reply: "NEW CODE IS LIVE" });
-});  try {
+  try {
     const userMessage = req.body.message;
 
     if (!userMessage) {
@@ -164,7 +163,6 @@ app.post("/chat", async (req, res) => {
 
     console.log("FULL GROQ RESPONSE:", data);
 
-    // if something goes wrong, show the REAL error
     if (!data.choices) {
       return res.json({
         reply: "ERROR: " + JSON.stringify(data)
@@ -177,11 +175,9 @@ app.post("/chat", async (req, res) => {
 
   } catch (err) {
     console.log("SERVER ERROR:", err);
-
     res.json({ reply: "Server crashed." });
   }
 });
-
 /* =========================
    START SERVER
 ========================= */
