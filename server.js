@@ -5,7 +5,7 @@ import * as cheerio from "cheerio";
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 /* =========================
    API SETTINGS
@@ -90,38 +90,57 @@ async function getAllWebsiteText() {
 let conversationHistory = [];
 const MAX_MEMORY = 10;
 
-/* =========================
-   CHAT ROUTE
-========================= */
 
+/*BASIC ROUTES*/
+
+// homepage
 app.get("/", (req, res) => {
   res.send("Bubble AI server is running");
 });
 
+// simple browser test UI
+app.get("/test", (req, res) => {
+  res.send(`
+    <html>
+      <body>
+        <h2>Bubble AI Test</h2>
+        <input id="msg" placeholder="Say something"/>
+        <button onclick="send()">Send</button>
+        <pre id="out"></pre>
+
+        <script>
+          async function send(){
+            const message = document.getElementById("msg").value;
+
+            const r = await fetch("/chat", {
+              method: "POST",
+              headers: {"Content-Type":"application/json"},
+              body: JSON.stringify({message})
+            });
+
+            const data = await r.json();
+            document.getElementById("out").textContent = data.reply;
+          }
+        </script>
+      </body>
+    </html>
+  `);
+});
+
+/* =========================
+   CHAT ROUTE
+========================= */
+
 app.post("/chat", async (req, res) => {
-
-  try {
-
-    console.log("Incoming message:", req.body);
-
+  return res.json({ reply: "NEW CODE IS LIVE" });
+});  try {
     const userMessage = req.body.message;
 
     if (!userMessage) {
       return res.json({ reply: "No message provided." });
     }
 
-    console.log("Fetching knowledge...");
-
-    const websiteText = await getAllWebsiteText();
-
-    const messages = [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "system", content: "Website knowledge:\n" + websiteText },
-      ...conversationHistory,
-      { role: "user", content: userMessage }
-    ];
-
-    console.log("Sending request to Groq...");
+    console.log("Incoming:", userMessage);
 
     const response = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
@@ -133,44 +152,34 @@ app.post("/chat", async (req, res) => {
         },
         body: JSON.stringify({
           model: MODEL,
-          messages: messages
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userMessage }
+          ]
         })
       }
     );
 
     const data = await response.json();
 
-    console.log("AI raw response:", data);
+    console.log("FULL GROQ RESPONSE:", data);
 
+    // if something goes wrong, show the REAL error
     if (!data.choices) {
-
       return res.json({
-        reply: "AI error occurred."
+        reply: "ERROR: " + JSON.stringify(data)
       });
-
     }
 
     const aiReply = data.choices[0].message.content;
 
-    conversationHistory.push(
-      { role: "user", content: userMessage },
-      { role: "assistant", content: aiReply }
-    );
-
-    if (conversationHistory.length > MAX_MEMORY * 2) {
-      conversationHistory = conversationHistory.slice(-MAX_MEMORY * 2);
-    }
-
     res.json({ reply: aiReply });
 
   } catch (err) {
+    console.log("SERVER ERROR:", err);
 
-    console.log("Server error:", err);
-
-    res.json({ reply: "No response from AI." });
-
+    res.json({ reply: "Server crashed." });
   }
-
 });
 
 /* =========================
