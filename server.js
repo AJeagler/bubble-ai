@@ -109,33 +109,160 @@ app.get("/", (req, res) => {
 // test UI
 app.get("/test", (req, res) => {
   res.send(`
-    <html>
-      <body>
-        <h2>Bubble AI Test</h2>
-        <input id="msg" placeholder="Ask Bubble AI"/>
-        <button onclick="send()">Send</button>
-        <pre id="out"></pre>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bubble AI</title>
 
-        <script>
-          async function send(){
-            const message = document.getElementById("msg").value;
+  <style>
+    body {
+      margin: 0;
+      font-family: 'SF Pro Text', 'SF Pro Display', -apple-system, BlinkMacMacSystemFont, Roboto, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+      background: #2a2a2b;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
 
-            document.getElementById("chat").innerHTML +=
-            "<p><b>You:</b> " + msg + "</p>" +
-            "<p><b>AI:</b> " + data.reply + "</p>";
+    header {
+      padding: 15px;
+      background: #e8e8e8;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+    }
 
-            const r = await fetch("/chat", {
-              method: "POST",
-              headers: {"Content-Type":"application/json"},
-              body: JSON.stringify({message})
-            });
+    #chat {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
-            const data = await r.json();
-            document.getElementById("out").textContent = data.reply;
-          }
-        </script>
-      </body>
-    </html>
+    .msg {
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .user {
+      align-self: flex-end;
+      background: #0560f5;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background: #e8e8e8;
+    }
+
+    #inputBox {
+      display: flex;
+      padding: 10px;
+      background: #e8e9e8;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      outline: none;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    button {
+      margin-left: 10px;
+      padding: 10px 15px;
+      border: none;
+      background: #3b82f6;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    .typing {
+      font-family: 'SF Pro Text', 'SF Pro Display', -apple-system, BlinkMacMacSystemFont, Roboto, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+      opacity: 0.7;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>Bubble AI</header>
+
+<div id="chat"></div>
+
+<div id="inputBox">
+  <input id="msg" placeholder="Ask Bubble AI" />
+  <button onclick="send()">Send Message</button>
+</div>
+
+<script>
+  const chat = document.getElementById("chat");
+  const input = document.getElementById("msg");
+
+  function addMessage(text, type) {
+    const div = document.createElement("div");
+    div.className = "msg " + type;
+    div.textContent = text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+  }
+
+  async function send() {
+    const message = input.value.trim();
+    if (!message) return;
+
+    addMessage(message, "user");
+    input.value = "";
+
+    const typing = addMessage("Bubble AI is typing...", "bot typing");
+
+    try {
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ message })
+      });
+
+      const data = await res.json();
+
+      typing.remove();
+      addMessage(data.reply || "No response from Bubble AI", "bot");
+
+    } catch (err) {
+      typing.remove();
+      addMessage("Error connecting to Bubble servers.", "bot");
+    }
+  }
+
+  // Enter key support
+  input.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+      send();
+    }
+    input.addEventListener("keypress", function(e) {
+    if (e.key === "s") {
+      send();
+    }
+  });
+</script>
+
+</body>
+</html>
   `);
 });
 
