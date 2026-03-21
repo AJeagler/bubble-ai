@@ -117,8 +117,8 @@ app.get("/test", (req, res) => {
   <style>
     body {
       margin: 0;
-      font-family: 'SF Pro Text', 'SF Pro Display', -apple-system, BlinkMacMacSystemFont, Roboto, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
-      background: #2a2a2b;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
       color: white;
       display: flex;
       flex-direction: column;
@@ -127,7 +127,7 @@ app.get("/test", (req, res) => {
 
     header {
       padding: 15px;
-      background: #e8e8e8;
+      background: #1e293b;
       font-size: 18px;
       font-weight: bold;
       text-align: center;
@@ -152,18 +152,18 @@ app.get("/test", (req, res) => {
 
     .user {
       align-self: flex-end;
-      background: #0560f5;
+      background: #3b82f6;
     }
 
     .bot {
       align-self: flex-start;
-      background: #e8e8e8;
+      background: #1e293b;
     }
 
     #inputBox {
       display: flex;
       padding: 10px;
-      background: #e8e9e8;
+      background: #1e293b;
     }
 
     input {
@@ -190,7 +190,7 @@ app.get("/test", (req, res) => {
     }
 
     .typing {
-      font-family: 'SF Pro Text', 'SF Pro Display', -apple-system, BlinkMacMacSystemFont, Roboto, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+      font-style: italic;
       opacity: 0.7;
     }
   </style>
@@ -198,13 +198,13 @@ app.get("/test", (req, res) => {
 
 <body>
 
-<header>Bubble AI</header>
+<header>💬 Bubble AI</header>
 
 <div id="chat"></div>
 
 <div id="inputBox">
-  <input id="msg" placeholder="Ask Bubble AI" />
-  <button onclick="send()">Send Message</button>
+  <input id="msg" placeholder="Type a message..." />
+  <button onclick="send()">Send</button>
 </div>
 
 <script>
@@ -241,21 +241,17 @@ app.get("/test", (req, res) => {
       const data = await res.json();
 
       typing.remove();
-      addMessage(data.reply || "No response from Bubble AI", "bot");
+      addMessage(data.reply || "No response", "bot");
 
     } catch (err) {
       typing.remove();
-      addMessage("Error connecting to Bubble servers.", "bot");
+      addMessage("Error connecting to server.", "bot");
     }
   }
 
   // Enter key support
   input.addEventListener("keypress", function(e) {
     if (e.key === "Enter") {
-      send();
-    }
-    input.addEventListener("keypress", function(e) {
-    if (e.key === "s") {
       send();
     }
   });
