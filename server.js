@@ -112,13 +112,17 @@ app.get("/test", (req, res) => {
     <html>
       <body>
         <h2>Bubble AI Test</h2>
-        <input id="msg" placeholder="Say something"/>
+        <input id="msg" placeholder="Ask Bubble AI"/>
         <button onclick="send()">Send</button>
         <pre id="out"></pre>
 
         <script>
           async function send(){
             const message = document.getElementById("msg").value;
+
+            document.getElementById("chat").innerHTML +=
+            "<p><b>You:</b> " + msg + "</p>" +
+            "<p><b>AI:</b> " + data.reply + "</p>";
 
             const r = await fetch("/chat", {
               method: "POST",
